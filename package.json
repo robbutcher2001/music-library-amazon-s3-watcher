@@ -7,5 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "mongoose": "^4.6.0",
+    "node-watch": "^0.4.0",
+    "jsmediatags": "^3.3.0"
+  }
 }
