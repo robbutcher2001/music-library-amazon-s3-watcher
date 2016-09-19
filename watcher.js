@@ -6,6 +6,11 @@ var Artist = require("./model/schemas/artists");
 var Track = require("./model/schemas/tracks");
 var tagReader = require("jsmediatags");
 
+//TODO: use this to add hashmap of paths and then process after
+//const crypto = require('crypto');
+//const hash = crypto.createHash('sha256');
+//var HashMap = require('hashmap');
+
 // Connect to mongodb database
 mongoose.connect("mongodb://localhost/test-music-app");
 
@@ -68,29 +73,39 @@ watch('/Users/rbutcher/Music/iTunes/iTunes Media/Music', { recursive: true, foll
 
 function addTrack(artistId, extension, filepath, tag) {
     if (artistId != null) {
-        var encoding = '';
-        if (extension == '.mp3') {
-            encoding = 'audio/mpeg';
-        }
-        else if (extension == '.m4a') {
-            encoding = 'audio/mp4';
-        }
 
-        var track = new Track({
-            albumId: 'n/a',
-            artistId: artistId,
-            title: tag.tags.title,
-            year: tag.tags.year,
-            location: filepath,
-            encoding: encoding
-        });
+        Track.find({ title: tag.tags.title }, function(err, track) {
+            if (track[0] == null) {
+                var encoding = '';
+                if (extension == '.mp3') {
+                    encoding = 'audio/mpeg';
+                }
+                else if (extension == '.m4a') {
+                    encoding = 'audio/mp4';
+                }
 
-        track.save(function (err, track) {
-            if (err == null) {
-                console.log('Track ID: ' + track.id);
+                var newTrack = new Track({
+                    albumId: 'n/a',
+                    artistId: artistId,
+                    title: tag.tags.title,
+                    year: tag.tags.year,
+                    location: filepath,
+                    encoding: encoding
+                });
+
+                newTrack.save(function (err, trackCallbakc) {
+                    if (err == null) {
+                        console.log('Track added with ID: ' + trackCallbakc.id);
+                    }
+                    else {
+                        console.error('Could not persist [' + tag.tags.title + '] by [' + tag.tags.artist + '] to DB');
+                    }
+                });
             }
             else {
-                console.error('Could not persist [' + tag.tags.title + '] by [' + tag.tags.artist + '] to DB');
+                //track with same name found (this is possible) - handle this, maybe compare
+                //artist ID and album ID of document too. If these differ, then it's just a
+                //coincidence the names are the same so continue to add track anyway
             }
         });
     }
