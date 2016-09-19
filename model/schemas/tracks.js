@@ -1,4 +1,4 @@
-var mongoose = require("mongoose");
+var mongoose = require('mongoose');
 var trackSchema = mongoose.Schema({
     albumId: String,
     artistId: String,
@@ -8,4 +8,4 @@ var trackSchema = mongoose.Schema({
     encoding: String
 });
 
-module.exports = mongoose.model("tracks", trackSchema);
+module.exports = mongoose.model('tracks', trackSchema);

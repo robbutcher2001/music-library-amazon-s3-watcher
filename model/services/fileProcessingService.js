@@ -9,7 +9,7 @@ fileProcessingService.processFilesystemChanges = function(filepaths) {
         var prevPromise = Promise.resolve();
 
         filepaths.forEach(function(filepath) {
-            console.log("Processing track change for [" + filepath + "]");
+            console.log('Processing track change for [' + filepath + ']');
 
             if (checkValidExtension(filepath)) {
                 prevPromise = prevPromise.then(function() {

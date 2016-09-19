@@ -1,5 +1,5 @@
 var fs = require('fs');
-var tagReader = require("jsmediatags");
+var tagReader = require('jsmediatags');
 
 var tagReadingService = {};
 

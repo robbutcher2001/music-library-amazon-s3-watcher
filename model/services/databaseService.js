@@ -1,7 +1,7 @@
-var mongoose = require("mongoose");
-var Artist = require("../schemas/artists");
-var Album = require("../schemas/albums");
-var Track = require("../schemas/tracks");
+var mongoose = require('mongoose');
+var Artist = require('../schemas/artists');
+var Album = require('../schemas/albums');
+var Track = require('../schemas/tracks');
 var tagReadingService = require('./tagReadingService');
 var path = require('path');
 
@@ -13,7 +13,7 @@ var databaseService = {};
 //var HashMap = require('hashmap');
 
 // Connect to mongodb database
-mongoose.connect("mongodb://localhost/test-music-app");
+mongoose.connect('mongodb://localhost/test-music-app');
 mongoose.Promise = Promise;
 
 databaseService.checkOrAddArtist = function(artist) {
