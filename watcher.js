@@ -13,4 +13,4 @@ setInterval(function () {
     });
     tracksToCheck = [];
     fileProcessingService.processFilesystemChanges(uniqueArray);
-}, 1000 * 20);
+}, 1000 * 60);
