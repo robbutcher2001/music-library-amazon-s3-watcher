@@ -10,7 +10,7 @@ var tagReader = require("jsmediatags");
 mongoose.connect("mongodb://localhost/test-music-app");
 
 //TODO: avoid chained calls
-watch('/home/music-library/tune-library', { recursive: true, followSymLinks: true }, function(filepath) {
+watch('/Users/rbutcher/Music/iTunes/iTunes Media/Music', { recursive: true, followSymLinks: true }, function(filepath) {
 
     fs.stat(filepath, function(err, stat) {
         if (err == null) {
