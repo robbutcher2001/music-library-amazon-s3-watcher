@@ -38,14 +38,15 @@ function processFilesystemChanges(filepaths) {
 
                     if (artist != null && album != null) {
                         console.log('Artist [' + artist + '] and album [' + album + '] found in file tags');
-                        Promise.all([checkOrAddArtist(artist), checkOrAddAlbum(album)]).then(function(ids) {
-                            var artistId = ids[0];
-                            var albumId = ids[1];
-
-                            updateAlbum(artistId);
-                            addTrack(albumId, artistId, filepath);
+                        checkOrAddArtist(artist).then(function(id) {
+                            var artistId = id;
+                            checkOrAddAlbum(artistId, album).then(function(id) {
+                                var albumId = id;
+                                addTrack(albumId, artistId, filepath);
+                            }).catch(function(error) {
+                                console.error(error);
+                            });
                         }).catch(function(error) {
-                            //why does this only print one error for .wav files?
                             console.error(error);
                         });
                     }
@@ -60,9 +61,6 @@ function processFilesystemChanges(filepaths) {
                 console.error('File type [' + filepath + '] not supported, ignoring');
             }
         });
-
-        //clear array
-        tracksToCheck = [];
     }
 }
 
@@ -152,7 +150,7 @@ function checkOrAddArtist(artist) {
     });
 }
 
-function checkOrAddAlbum(album) {
+function checkOrAddAlbum(artistId, album) {
     return new Promise(function(resolve, reject) {
         Album.find({ name: album }, function(err, results) {
             var albumId = null;
@@ -163,7 +161,7 @@ function checkOrAddAlbum(album) {
 
             if (results[0] == null) {
                 var newAlbum = new Album({
-                    artistId: '?',
+                    artistId: artistId,
                     name: album
                 });
 
@@ -187,10 +185,6 @@ function checkOrAddAlbum(album) {
     });
 }
 
-function updateAlbum(artistId) {
-    //TODO: update artistId in DB
-}
-
 function addTrack(albumId, artistId, filepath) {
     var extension = getFileExtension(filepath);
 
@@ -207,12 +201,11 @@ function addTrack(albumId, artistId, filepath) {
             var title = results[0];
             var year = results[1];
 
-            Track.find({ title: title }, function(err, track) {
+            Track.find({ title: title }).where('albumId').eq(albumId).exec(function(err, track) {
                 if (track.length > 1) {
-                    console.error('Multiple tracks returned of the same name');
+                    console.error('Multiple tracks returned of the same name for same album');
                 }
 
-                //TODO: check albumId and artistId same too and not just track name
                 if (track[0] == null) {
                     var newTrack = new Track({
                         albumId: albumId,
