@@ -20,6 +20,9 @@ fileProcessingService.processFilesystemChanges = function(filepaths) {
 
                     if (artist != null && album != null) {
                         console.log('Artist [' + artist + '] and album [' + album + '] found in file tags');
+                        //TODO: when there is no artist of album in the DB, these following dbService lines
+                        //can execute at the same time and you get a race condition in Mongoose where
+                        //two new artists or albums are added - this really needs to be synchronous
                         databaseService.checkOrAddArtist(artist).then(function(id) {
                             var artistId = id;
                             databaseService.checkOrAddAlbum(artistId, album).then(function(id) {

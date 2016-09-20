@@ -30,7 +30,7 @@ tagReadingService.getTags = function(filepath, tagsRequested) {
                         resolve(tagsResolved);
                     },
                     onError: function(error) {
-                        reject('Could not identify [' + tagRequested + '] from track: ' +  error.info);
+                        reject('Could not identify [' + tagsRequested + '] from track: ' +  error.info);
                     }
                 });
             }
