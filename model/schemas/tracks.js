@@ -3,6 +3,7 @@ var trackSchema = mongoose.Schema({
     albumId: String,
     artistId: String,
     title: String,
+    extension: String,
     year: String,
     location: String,
     encoding: String

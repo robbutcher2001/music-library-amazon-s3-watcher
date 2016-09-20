@@ -111,6 +111,7 @@ databaseService.addTrack = function(albumId, artistId, filepath) {
                         albumId: albumId,
                         artistId: artistId,
                         title: title,
+                        extension: extension,
                         year: year,
                         location: filepath,
                         encoding: encoding
