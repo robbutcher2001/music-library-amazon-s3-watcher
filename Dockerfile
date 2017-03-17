@@ -1,4 +1,5 @@
-FROM node
+# Using a lightweight linux distro
+FROM robbutcher2001/alpine-nodejs
 
 # Create app directory
 RUN mkdir -p /usr/src/app
