@@ -1,5 +1,4 @@
-# Using a lightweight linux distro
-FROM robbutcher2001/alpine-nodejs
+FROM node
 
 # Create app directory
 RUN mkdir -p /usr/src/app
@@ -15,7 +14,7 @@ COPY . /usr/src/app
 # Create media directory
 RUN mkdir -p /usr/media/app
 
-CMD [ "npm", "start" ]
-
 # Copy test media to directory
 COPY test.mp3 /usr/media/app
+
+CMD [ "npm", "start" ]
