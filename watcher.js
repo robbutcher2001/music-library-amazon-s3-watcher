@@ -3,7 +3,7 @@ var fileProcessingService = require('./model/services/fileProcessingService');
 
 var tracksToCheck = [];
 
-watch('/Users/rbutcher/Music/iTunes/iTunes Media/Music', { recursive: true, followSymLinks: true }, function(filepath) {
+watch('/usr/media/app', { recursive: true, followSymLinks: true }, function(filepath) {
     tracksToCheck.push(filepath);
 });
 

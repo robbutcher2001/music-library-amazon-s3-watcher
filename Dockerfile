@@ -12,4 +12,10 @@ RUN npm install
 # Bundle app source
 COPY . /usr/src/app
 
+# Create media directory
+RUN mkdir -p /usr/media/app
+
 CMD [ "npm", "start" ]
+
+# Copy test media to directory
+COPY test.mp3 /usr/media/app
