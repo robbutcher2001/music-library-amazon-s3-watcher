@@ -15,6 +15,6 @@ COPY . /usr/src/app
 RUN mkdir -p /usr/media/app
 
 # Copy test media to directory
-COPY test.mp3 /usr/media/app
+COPY meida/ /usr/media/app
 
 CMD [ "npm", "start" ]
