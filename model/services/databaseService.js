@@ -13,7 +13,7 @@ var databaseService = {};
 //var HashMap = require('hashmap');
 
 // Connect to mongodb database
-mongoose.connect('mongodb://database-service-container/music-app-db');
+mongoose.connect('mongodb://database-service-container-1/music-app-db');
 mongoose.Promise = Promise;
 
 databaseService.checkOrAddArtist = function(artist) {
