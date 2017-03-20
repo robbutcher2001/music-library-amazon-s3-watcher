@@ -1,5 +1,7 @@
 // Load the S3 SDK for JavaScript
-var AWS = require('aws-sdk/clients/s3');
+// TODO: add only call to S3
+// var AWS = require('aws-sdk/clients/s3');
+var AWS = require('aws-sdk');
 // Load credentials and set region from JSON file
 // TODO: regen and move to DB and store in private container image
 // http://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials.html
@@ -8,27 +10,31 @@ AWS.config.loadFromPath('./s3_config.json');
 // Create S3 service object
 s3 = new AWS.S3();
 
-var params = {Bucket: 'robertbutcher.co.uk-music-library'};
-
 var allKeys = [];
-function listAllKeys(marker, cb) {
-  s3.listObjects({Bucket: s3bucket, Marker: marker}, function(err, data) {
-    allKeys.push(data.Contents);
+var params = {
+    Bucket: 'robertbutcher.co.uk-music-library'
+};
 
-    if (data.IsTruncated)
-      listAllKeys(data.NextMarker, cb);
-    else
-      cb();
-  });
+listAllKeys();
+
+function listAllKeys() {
+    s3.listObjectsV2(params, function (err, data) {
+        if (err) {
+            console.log(err, err.stack); // an error occurred
+        } else {
+            var contents = data.Contents;
+            contents.forEach(function (content) {
+                allKeys.push(content.Key);
+            });
+
+            if (data.IsTruncated) {
+                params.ContinuationToken = data.NextContinuationToken;
+                console.log("get further list...");
+                listAllKeys();
+            }
+
+        }
+    });
 };
 
 // Call S3 to list current buckets
-s3.listBuckets(function(err, data) {
-  listAllKeys();
-  console.log("Recursive bucket", allKeys);
-   if (err) {
-      console.log("Error", err);
-   } else {
-      console.log("Bucket List", data.Buckets);
-   }
-});
