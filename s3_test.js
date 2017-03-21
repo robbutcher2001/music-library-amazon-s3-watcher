@@ -31,8 +31,7 @@ s3MusicService.getAllS3Tracks = function() {
                 if (data.IsTruncated) {
                     params.ContinuationToken = data.NextContinuationToken;
                     s3MusicService.getAllS3Tracks().then(function(moreKeys) {
-                        allKeys.push(moreKeys);
-                        resolve(allKeys);
+                        resolve(allKeys.concat(moreKeys));
                     }).catch(function(error) {
                         console.error(error, error.stack);
                     });
