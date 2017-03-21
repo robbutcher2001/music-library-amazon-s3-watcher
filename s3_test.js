@@ -11,46 +11,44 @@ AWS.config.loadFromPath('./s3_config.json');
 s3 = new AWS.S3();
 
 var s3MusicService = {};
+var params = {
+    Bucket: 'robertbutcher.co.uk-music-library',
+    MaxKeys: '20'
+};
 
 s3MusicService.getAllS3Tracks = function() {
     return new Promise(function(resolve, reject) {
         var allKeys = [];
-        var params = {
-            Bucket: 'robertbutcher.co.uk-music-library',
-            MaxKeys: '10'
-        };
-        recursiveFetchS3Keys();
+        s3.listObjectsV2(params, function (err, data) {
+            if (err) {
+                reject(err);
+            } else {
+                var contents = data.Contents;
+                contents.forEach(function (content) {
+                    allKeys.push(content.Key);
+                });
 
-        function recursiveFetchS3Keys() {
-            s3.listObjectsV2(params, function (err, data) {
-                if (err) {
-                    reject(err);
-                } else {
-                    var contents = data.Contents;
-                    contents.forEach(function (content) {
-                        allKeys.push(content.Key);
+                if (data.IsTruncated) {
+                    params.ContinuationToken = data.NextContinuationToken;
+                    s3MusicService.getAllS3Tracks().then(function(moreKeys) {
+                        resolve(moreKeys);
+                    }).catch(function(error) {
+                        console.error(error, error.stack);
                     });
-
-                    if (data.IsTruncated) {
-                        params.ContinuationToken = data.NextContinuationToken;
-                        console.log("Recursing..");
-                        recursiveFetchS3Keys();
-                    }
-
-                    //resolve(allKeys);
                 }
-            });
-        };
-
-        resolve(allKeys);
+                else {
+                  resolve(allKeys);
+                }
+            }
+        });
     });
 };
 
 module.exports = s3MusicService;
 
-console.log("get files..");
-s3MusicService.getAllS3Tracks().then(function(id) {
-    console.log(id);
+console.log("Getting all tracks..");
+s3MusicService.getAllS3Tracks().then(function(tracks) {
+    console.log(tracks);
 }).catch(function(error) {
     console.error(error, error.stack);
 });
