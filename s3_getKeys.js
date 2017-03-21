@@ -1,3 +1,6 @@
+var fs = require('fs');
+var path = require('path');
+var tagReadingService = require('./model/services/tagReadingService');
 // Load the S3 SDK for JavaScript
 // TODO: add only call to S3
 // var AWS = require('aws-sdk/clients/s3');
@@ -18,12 +21,13 @@ var params = {
 s3MusicService.getAllS3Tracks = function() {
     return new Promise(function(resolve, reject) {
         var allKeys = [];
-        s3.listObjectsV2(params, function (err, data) {
-            if (err) {
-                reject(err);
+        s3.listObjectsV2(params, function (error, data) {
+            if (error) {
+                reject(error);
             } else {
                 var contents = data.Contents;
                 contents.forEach(function (content) {
+                    console.log(content)
                     allKeys.push(content.Key);
                 });
 
@@ -48,6 +52,22 @@ module.exports = s3MusicService;
 console.log("Getting all tracks..");
 s3MusicService.getAllS3Tracks().then(function(tracks) {
     console.log(tracks);
+
+    tracks.forEach(function(track) {
+      params.Key = track;
+      var file = fs.createWriteStream('cache.mp3');
+      s3.getObject(params).
+        on('httpData', function(chunk) { file.write(chunk); }).
+        on('httpDone', function() {
+            file.end();
+            console.log(file.path)
+            tagReadingService.getTags(file.path, ['artist', 'album']).then(function(tags) {
+                console.log(tags[0]);
+                console.log(tags[1]);
+            });
+        }).
+        send();
+    });
 }).catch(function(error) {
     console.error(error, error.stack);
 });
