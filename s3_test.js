@@ -12,8 +12,7 @@ s3 = new AWS.S3();
 
 var s3MusicService = {};
 var params = {
-    Bucket: 'robertbutcher.co.uk-music-library',
-    MaxKeys: '20'
+    Bucket: 'robertbutcher.co.uk-music-library'
 };
 
 s3MusicService.getAllS3Tracks = function() {
