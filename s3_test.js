@@ -11,14 +11,47 @@ AWS.config.loadFromPath('./s3_config.json');
 s3 = new AWS.S3();
 
 var allKeys = [];
-var params = {
-    Bucket: 'robertbutcher.co.uk-music-library'
+
+var s3MusicService = {};
+
+s3MusicService.getAllS3Tracks = function(artist) {
+    return new Promise(function(resolve, reject) {
+        var params = {
+            Bucket: 'robertbutcher.co.uk-music-library'
+        };
+        function recursiveFetchS3Keys() {
+            s3.listObjects(params, function (err, data) {
+                if (err) {
+                    console.log(err, err.stack); // an error occurred
+                } else {
+                    var contents = data.Contents;
+                    contents.forEach(function (content) {
+                        allKeys.push(content.Key);
+                    });
+
+                    if (data.IsTruncated) {
+                        params.ContinuationToken = data.NextContinuationToken;
+                        console.log("Recursing..");
+                        recursiveFetchS3Keys();
+                    }
+
+                    resolve(allKeys);
+                }
+            });
+        };
+    });
 };
 
-listAllKeys();
+module.exports = s3MusicService;
+
+console.log("get files..");
+// listAllKeys();
+s3MusicService.getAllS3Tracks().then(function(id) {
+    console.log(id);
+});
 
 function listAllKeys() {
-    s3.listObjectsV2(params, function (err, data) {
+    s3.listObjects(params, function (err, data) {
         if (err) {
             console.log(err, err.stack); // an error occurred
         } else {
@@ -29,12 +62,14 @@ function listAllKeys() {
 
             if (data.IsTruncated) {
                 params.ContinuationToken = data.NextContinuationToken;
-                console.log("get further list...");
+                console.log("get further list..");
                 listAllKeys();
             }
 
+            console.log("Length: " + allKeys.length)
+            console.log(allKeys);
         }
     });
 };
 
-// Call S3 to list current buckets
+// console.log(allKeys);
