@@ -47,29 +47,39 @@ s3MusicService.getAllS3Tracks = function() {
     });
 };
 
+s3MusicService.getTrack = function(trackKey) {
+    return new Promise(function(resolve, reject) {
+      //TODO: move bucket URL out
+      var trackParams = {
+          Bucket: 'robertbutcher.co.uk-music-library',
+          Key: trackKey
+      };
+      var cacheTemp = fs.createWriteStream('cacheTemp.mp3');
+      //TODO: add error handling
+      s3.getObject(trackParams).
+        on('httpData', function(chunk) { file.write(chunk); }).
+        on('httpDone', function() {
+            file.end();
+            resolve(file);
+        }).
+        send();
+    });
+};
+
 module.exports = s3MusicService;
 
 console.log("Getting all tracks..");
-s3MusicService.getAllS3Tracks().then(function(tracks) {
-    console.log(tracks);
+s3MusicService.getAllS3Tracks().then(function(trackKeys) {
+//TODO: pull each track if mp3 / m4a and extract tags
+// initially this will be slow but once db model is built it
+// should just be a case of maintenance
 
-    params.Key = tracks[55];
-    params.Key = tracks[56];
-    console.log("Keys are: " + params.Key)
-    var file = fs.createWriteStream('cache.mp3');
-    s3.getObject(params).
-      on('httpData', function(chunk) { file.write(chunk); }).
-      on('httpDone', function() {
-          file.end();
-          console.log(file.path)
-          tagReadingService.getTags(file.path, ['artist', 'album']).then(function(tags) {
-              console.log(tags[0]);
-              console.log(tags[1]);
-          });
-      }).
-      send();
-    tracks.forEach(function(track) {
-
+    trackKeys.forEach(function(trackKey) {
+        s3MusicService.getTrack(trackKey).then(function(track) {
+            console.log(track.path + " processed")
+        }).catch(function(error) {
+            console.error(error, error.stack);
+        });
     });
 }).catch(function(error) {
     console.error(error, error.stack);
