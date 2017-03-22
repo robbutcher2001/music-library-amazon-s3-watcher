@@ -61,10 +61,10 @@ s3MusicService.getAllS3Tracks().then(function(tracks) {
         on('httpDone', function() {
             file.end();
             console.log(file.path)
-            tagReadingService.getTags(file.path, ['artist', 'album']).then(function(tags) {
-                console.log(tags[0]);
-                console.log(tags[1]);
-            });
+            // tagReadingService.getTags(file.path, ['artist', 'album']).then(function(tags) {
+            //     console.log(tags[0]);
+            //     console.log(tags[1]);
+            // });
         }).
         send();
     });
