@@ -57,10 +57,10 @@ s3MusicService.getTrack = function(trackKey) {
       var cacheTemp = fs.createWriteStream('cacheTemp.mp3');
       //TODO: add error handling
       s3.getObject(trackParams).
-        on('httpData', function(chunk) { file.write(chunk); }).
+        on('httpData', function(chunk) { cacheTemp.write(chunk); }).
         on('httpDone', function() {
-            file.end();
-            resolve(file);
+            cacheTemp.end();
+            resolve(cacheTemp);
         }).
         send();
     });
