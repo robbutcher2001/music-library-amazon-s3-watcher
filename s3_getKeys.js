@@ -53,20 +53,21 @@ console.log("Getting all tracks..");
 s3MusicService.getAllS3Tracks().then(function(tracks) {
     console.log(tracks);
 
+    params.Key = tracks[20];
+    var file = fs.createWriteStream('cache.mp3');
+    s3.getObject(params).
+      on('httpData', function(chunk) { file.write(chunk); }).
+      on('httpDone', function() {
+          file.end();
+          console.log(file.path)
+          tagReadingService.getTags(file.path, ['artist', 'album']).then(function(tags) {
+              console.log(tags[0]);
+              console.log(tags[1]);
+          });
+      }).
+      send();
     tracks.forEach(function(track) {
-      params.Key = track;
-      var file = fs.createWriteStream('cache.mp3');
-      s3.getObject(params).
-        on('httpData', function(chunk) { file.write(chunk); }).
-        on('httpDone', function() {
-            file.end();
-            console.log(file.path)
-            // tagReadingService.getTags(file.path, ['artist', 'album']).then(function(tags) {
-            //     console.log(tags[0]);
-            //     console.log(tags[1]);
-            // });
-        }).
-        send();
+
     });
 }).catch(function(error) {
     console.error(error, error.stack);
