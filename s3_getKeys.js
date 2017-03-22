@@ -54,6 +54,8 @@ s3MusicService.getAllS3Tracks().then(function(tracks) {
     console.log(tracks);
 
     params.Key = tracks[20];
+    params.Key = tracks[21];
+    console.log("Keys are: " + params.Key)
     var file = fs.createWriteStream('cache.mp3');
     s3.getObject(params).
       on('httpData', function(chunk) { file.write(chunk); }).
