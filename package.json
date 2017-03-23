@@ -10,9 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.28.0",
+    "jsmediatags": "^3.3.0",
     "mongoose": "^4.6.0",
     "node-watch": "^0.4.0",
-    "jsmediatags": "^3.3.0",
-    "aws-sdk": "^2.28.0"
+    "proxy-agent": "^2.0.0"
   }
 }

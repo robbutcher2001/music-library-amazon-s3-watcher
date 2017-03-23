@@ -10,12 +10,21 @@ var AWS = require('aws-sdk');
 // http://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials.html
 AWS.config.loadFromPath('./s3_config.json');
 
+//just for local
+var proxy = require('proxy-agent');
+
+// AWS.config.update({
+//   httpOptions: { agent: proxy('http://172.17.7.1:8080/') }
+// });
+//end just for local
+
 // Create S3 service object
 s3 = new AWS.S3();
 
 var s3MusicService = {};
+var bucketUrl = 'robertbutcher.co.uk-music-library';
 var params = {
-    Bucket: 'robertbutcher.co.uk-music-library'
+    Bucket: bucketUrl
 };
 
 s3MusicService.getAllS3Tracks = function() {
@@ -46,27 +55,57 @@ s3MusicService.getAllS3Tracks = function() {
     });
 };
 
-s3MusicService.getTrack = function(trackKey) {
-    return new Promise(function(resolve, reject) {
-      //TODO: move bucket URL out
-      var trackParams = {
-          Bucket: 'robertbutcher.co.uk-music-library',
-          Key: trackKey
-      };
+s3MusicService.extractTrackMeta = function(trackKeys, index) {
+    var trackKey = trackKeys[index++];
+    var trackParams = {
+        Bucket: bucketUrl,
+        Key: trackKey
+    };
 
-      var tokenisedKey = trackKey.split(/\//);
-      var trackName = tokenisedKey[(tokenisedKey.length - 1)];
-      var cacheTemp = fs.createWriteStream(trackName);
-      //TODO: add error handling
-      s3.getObject(trackParams).
-        on('httpData', function(chunk) { cacheTemp.write(chunk); }).
-        on('httpDone', function() {
-            cacheTemp.end();
-            resolve(cacheTemp);
-        }).
-        send();
-    });
+    var tokenisedKey = trackKey.split(/\//);
+    var trackName = tokenisedKey[(tokenisedKey.length - 1)];
+
+    if (checkValidExtension(trackName)) {
+        var cacheTemp = fs.createWriteStream('./media/' + trackName);
+        //TODO: add error handling
+        s3.getObject(trackParams).
+          on('httpData', function(chunk) { cacheTemp.write(chunk); }).
+          on('httpDone', function() {
+              cacheTemp.end();
+              tagReadingService.getTags(cacheTemp.path, ['artist', 'album']).then(function(tags) {
+                  console.log(tags[0]);
+                  console.log(tags[1]);
+                  fs.unlink(cacheTemp.path, (error) => {
+                      if (error) throw error;
+                  });
+              });
+
+              //forces synchronous processing of files to prevent mem issues
+              if (index < trackKeys.length) {
+                  s3MusicService.extractTrackMeta(trackKeys, index);
+              }
+          }).
+          send();
+    }
+    else {
+        //forces synchronous processing of files to prevent mem issues
+        if (index < trackKeys.length) {
+            s3MusicService.extractTrackMeta(trackKeys, index);
+        }
+    }
 };
+
+function checkValidExtension(trackName) {
+    var valid = false;
+    var tokenisedTrackName = trackName.split(/\./);
+    var extension = tokenisedTrackName[(tokenisedTrackName.length - 1)];
+
+    if (extension == 'mp3' || extension == 'm4a') {
+        valid = !valid;
+    }
+
+    return valid;
+}
 
 module.exports = s3MusicService;
 
@@ -76,19 +115,7 @@ s3MusicService.getAllS3Tracks().then(function(trackKeys) {
 // initially this will be slow but once db model is built it
 // should just be a case of maintenance
 
-
-    trackKeys.forEach(function(trackKey) {
-        s3MusicService.getTrack(trackKey).then(function(track) {
-            console.log(track.path + " processed")
-
-            // tagReadingService.getTags(track.path, ['artist', 'album']).then(function(tags) {
-            //     console.log(tags[0]);
-            //     console.log(tags[1]);
-            // });
-        }).catch(function(error) {
-            console.error(error, error.stack);
-        });
-    });
+    s3MusicService.extractTrackMeta(trackKeys, 0);
 }).catch(function(error) {
     console.error(error, error.stack);
 });
