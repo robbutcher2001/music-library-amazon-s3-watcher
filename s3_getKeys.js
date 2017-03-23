@@ -54,7 +54,10 @@ s3MusicService.getTrack = function(trackKey) {
           Bucket: 'robertbutcher.co.uk-music-library',
           Key: trackKey
       };
-      var cacheTemp = fs.createWriteStream('cacheTemp.mp3');
+
+      var tokenisedKey = trackKey.split(/\//);
+      var trackName = tokenisedKey[(tokenisedKey.length - 1)];
+      var cacheTemp = fs.createWriteStream(trackName);
       //TODO: add error handling
       s3.getObject(trackParams).
         on('httpData', function(chunk) { cacheTemp.write(chunk); }).
@@ -74,9 +77,15 @@ s3MusicService.getAllS3Tracks().then(function(trackKeys) {
 // initially this will be slow but once db model is built it
 // should just be a case of maintenance
 
+
     trackKeys.forEach(function(trackKey) {
         s3MusicService.getTrack(trackKey).then(function(track) {
             console.log(track.path + " processed")
+
+            tagReadingService.getTags(track.path, ['artist', 'album']).then(function(tags) {
+                console.log(tags[0]);
+                console.log(tags[1]);
+            });
         }).catch(function(error) {
             console.error(error, error.stack);
         });
