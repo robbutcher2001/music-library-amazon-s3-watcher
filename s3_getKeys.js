@@ -27,7 +27,6 @@ s3MusicService.getAllS3Tracks = function() {
             } else {
                 var contents = data.Contents;
                 contents.forEach(function (content) {
-                    console.log(content)
                     allKeys.push(content.Key);
                 });
 
@@ -82,10 +81,10 @@ s3MusicService.getAllS3Tracks().then(function(trackKeys) {
         s3MusicService.getTrack(trackKey).then(function(track) {
             console.log(track.path + " processed")
 
-            tagReadingService.getTags(track.path, ['artist', 'album']).then(function(tags) {
-                console.log(tags[0]);
-                console.log(tags[1]);
-            });
+            // tagReadingService.getTags(track.path, ['artist', 'album']).then(function(tags) {
+            //     console.log(tags[0]);
+            //     console.log(tags[1]);
+            // });
         }).catch(function(error) {
             console.error(error, error.stack);
         });
