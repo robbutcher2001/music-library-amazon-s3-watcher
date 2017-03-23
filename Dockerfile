@@ -1,4 +1,4 @@
-FROM node
+FROM robbutcher2001/alpine-nodejs
 
 # Create app directory
 RUN mkdir -p /usr/src/app
