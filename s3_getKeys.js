@@ -56,43 +56,61 @@ s3MusicService.getAllS3Tracks = function() {
 };
 
 s3MusicService.extractTrackMeta = function(trackKeys, index) {
-    var trackKey = trackKeys[index++];
-    var trackParams = {
-        Bucket: bucketUrl,
-        Key: trackKey
-    };
+    return new Promise(function(resolve, reject) {
+        var nonUniqueArtists = [];
 
-    var tokenisedKey = trackKey.split(/\//);
-    var trackName = tokenisedKey[(tokenisedKey.length - 1)];
+        var trackKey = trackKeys[index++];
+        var trackParams = {
+            Bucket: bucketUrl,
+            Key: trackKey
+        };
+        var tokenisedKey = trackKey.split(/\//);
+        var trackName = tokenisedKey[(tokenisedKey.length - 1)];
 
-    if (checkValidExtension(trackName)) {
-        var cacheTemp = fs.createWriteStream('./media/' + trackName);
-        //TODO: add error handling
-        s3.getObject(trackParams).
-          on('httpData', function(chunk) { cacheTemp.write(chunk); }).
-          on('httpDone', function() {
-              cacheTemp.end();
-              tagReadingService.getTags(cacheTemp.path, ['artist', 'album']).then(function(tags) {
-                  console.log(tags[0]);
-                  console.log(tags[1]);
-                  fs.unlink(cacheTemp.path, (error) => {
-                      if (error) throw error;
+        if (checkValidExtension(trackName)) {
+            var cacheTemp = fs.createWriteStream('./media/' + trackName);
+            //TODO: add error handling
+            s3.getObject(trackParams).
+              on('httpData', function(chunk) { cacheTemp.write(chunk); }).
+              on('httpDone', function() {
+                  cacheTemp.end();
+                  tagReadingService.getTags(cacheTemp.path, ['artist', 'album']).then(function(tags) {
+                      console.log(tags[0]);
+                      console.log(tags[1]);
+                      nonUniqueArtists.push(tags[0]);
+                      fs.unlink(cacheTemp.path, (error) => {
+                          if (error) throw error;
+                      });
                   });
-              });
 
-              //forces synchronous processing of files to prevent mem issues
-              if (index < trackKeys.length) {
-                  s3MusicService.extractTrackMeta(trackKeys, index);
-              }
-          }).
-          send();
-    }
-    else {
-        //forces synchronous processing of files to prevent mem issues
-        if (index < trackKeys.length) {
-            s3MusicService.extractTrackMeta(trackKeys, index);
+                  //forces synchronous processing of files to prevent mem issues
+                  if (index < trackKeys.length) {
+                      s3MusicService.extractTrackMeta(trackKeys, index).then(function(moreArtists) {
+                          resolve(nonUniqueArtists.concat(moreArtists));
+                      }).catch(function(error) {
+                          console.error(error, error.stack);
+                      });
+                  }
+                  else {
+                      resolve(nonUniqueArtists);
+                  }
+              }).
+              send();
         }
-    }
+        else {
+            //forces synchronous processing of files to prevent mem issues
+            if (index < trackKeys.length) {
+                s3MusicService.extractTrackMeta(trackKeys, index).then(function(moreArtists) {
+                    resolve(nonUniqueArtists.concat(moreArtists));
+                }).catch(function(error) {
+                    console.error(error, error.stack);
+                });
+            }
+            else {
+                resolve(nonUniqueArtists);
+            }
+        }
+    });
 };
 
 function checkValidExtension(trackName) {
@@ -115,7 +133,9 @@ s3MusicService.getAllS3Tracks().then(function(trackKeys) {
 // initially this will be slow but once db model is built it
 // should just be a case of maintenance
 
-    s3MusicService.extractTrackMeta(trackKeys, 0);
+    s3MusicService.extractTrackMeta(trackKeys, 0).then(function(nonUniqueArtists) {
+        console.log('Artists found: ' + nonUniqueArtists)
+    });
 }).catch(function(error) {
     console.error(error, error.stack);
 });
