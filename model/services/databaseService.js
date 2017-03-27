@@ -2,8 +2,6 @@ var mongoose = require('mongoose');
 var Artist = require('../schemas/artists');
 var Album = require('../schemas/albums');
 var Track = require('../schemas/tracks');
-var tagReadingService = require('./tagReadingService');
-var path = require('path');
 
 var databaseService = {};
 
@@ -13,7 +11,8 @@ var databaseService = {};
 //var HashMap = require('hashmap');
 
 // Connect to mongodb database
-mongoose.connect('mongodb://database-service-container-1/music-app-db');
+// mongoose.connect('mongodb://database-service-container-1/music-app-db');
+mongoose.connect('mongodb://localhost/music-app-db');
 mongoose.Promise = Promise;
 
 databaseService.checkOrAddArtist = function(artist) {
@@ -34,7 +33,7 @@ databaseService.checkOrAddArtist = function(artist) {
                     if (err == null) {
                         artistId = artistCallback.id;
                         resolve(artistId);
-                        console.log('Artist added to DB with new ID [' + artistId + ']');
+                        console.log('New artist [' + artist + '] added to DB with new ID [' + artistId + ']');
                     }
                     else {
                         console.error('Could not persist [' + artist + '] to DB');
@@ -69,7 +68,7 @@ databaseService.checkOrAddAlbum = function(artistId, album) {
                     if (err == null) {
                         albumId = albumCallback.id;
                         resolve(albumId);
-                        console.log('Album added to DB with new ID [' + albumId + ']');
+                        console.log('New album [' + album + '] added to DB with new ID [' + albumId + ']');
                     }
                     else {
                         console.error('Could not persist [' + album + '] to DB');
@@ -85,56 +84,66 @@ databaseService.checkOrAddAlbum = function(artistId, album) {
     });
 };
 
-databaseService.addTrack = function(albumId, artistId, filepath) {
-    var extension = path.extname(filepath);
-
+databaseService.addTrack = function(albumId, artistId, extension, s3key, title, year) {
     if (albumId != null && artistId != null) {
         var encoding = 'audio';
-        if (extension == '.mp3') {
+        if (extension == 'mp3') {
             encoding = 'audio/mpeg';
         }
-        else if (extension == '.m4a') {
+        else if (extension == 'm4a') {
             encoding = 'audio/mp4';
         }
 
-        tagReadingService.getTags(filepath, ['title', 'year']).then(function(results) {
-            var title = results[0];
-            var year = results[1];
+        Track.find({ title: title }).where('albumId').eq(albumId).exec(function(err, track) {
+            if (track.length > 1) {
+                console.error('Multiple tracks returned of the same name for same album');
+            }
 
-            Track.find({ title: title }).where('albumId').eq(albumId).exec(function(err, track) {
-                if (track.length > 1) {
-                    console.error('Multiple tracks returned of the same name for same album');
-                }
+            if (track[0] == null) {
+                var newTrack = new Track({
+                    albumId: albumId,
+                    artistId: artistId,
+                    title: title,
+                    extension: extension,
+                    year: year,
+                    s3key: s3key,
+                    encoding: encoding
+                });
 
-                if (track[0] == null) {
-                    var newTrack = new Track({
-                        albumId: albumId,
-                        artistId: artistId,
-                        title: title,
-                        extension: extension,
-                        year: year,
-                        location: filepath,
-                        encoding: encoding
-                    });
-
-                    newTrack.save(function (err, trackCallback) {
-                        if (err == null) {
-                            console.log('New track added to DB [' + title + ':' + trackCallback.id + ']');
-                        }
-                        else {
-                            console.error('Could not persist [' + title + '] to DB');
-                        }
-                    });
-                }
-                else {
-                    console.log('Track [' + track[0].toObject()._id + '] already exists, ignoring');
-                }
-            });
+                newTrack.save(function (err, trackCallback) {
+                    if (err == null) {
+                        console.log('New track added to DB [' + title + ':' + trackCallback.id + ']');
+                    }
+                    else {
+                        console.error('Could not persist [' + title + '] to DB');
+                    }
+                });
+            }
+            else {
+                console.log('Track [' + track[0].toObject()._id + '] already exists, ignoring');
+            }
         });
     }
     else {
-        console.error('An artistId or albumId is not present, cannot save track [' + filepath + ']');
+        console.error('An artistId or albumId is not present, cannot save track [' + s3key + ']');
     }
+};
+
+databaseService.checkTrackExists = function(s3key) {
+    return new Promise(function(resolve, reject) {
+        Track.find({ s3key: s3key }, function(err, tracks) {
+            if (tracks.length > 1) {
+                console.error('Multiple tracks returned with the same S3 key');
+            }
+
+            var found = false;
+            if (tracks[0] != null) {
+                found = true;
+            }
+
+            resolve(found);
+        });
+    });
 };
 
 module.exports = databaseService;

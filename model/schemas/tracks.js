@@ -5,7 +5,7 @@ var trackSchema = mongoose.Schema({
     title: String,
     extension: String,
     year: String,
-    location: String,
+    s3key: String,
     encoding: String
 });
 
