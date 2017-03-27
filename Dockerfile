@@ -11,4 +11,7 @@ RUN npm install
 # Bundle app source
 COPY . /usr/src/app
 
+# Create cache media dir
+RUN mkdir ./media
+
 CMD [ "npm", "start" ]
