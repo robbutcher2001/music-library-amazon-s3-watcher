@@ -11,10 +11,4 @@ RUN npm install
 # Bundle app source
 COPY . /usr/src/app
 
-# Create media directory
-RUN mkdir -p /usr/media/app
-
-# Copy test media to directory
-COPY media/ /usr/media/app
-
 CMD [ "npm", "start" ]
