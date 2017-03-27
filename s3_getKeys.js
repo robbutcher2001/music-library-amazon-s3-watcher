@@ -13,9 +13,9 @@ AWS.config.loadFromPath('./s3_config.json');
 //just for local
 var proxy = require('proxy-agent');
 
-// AWS.config.update({
-//   httpOptions: { agent: proxy('http://172.17.7.1:8080/') }
-// });
+AWS.config.update({
+  httpOptions: { agent: proxy('http://172.26.193.2:8080/') }
+});
 //end just for local
 
 // Create S3 service object
