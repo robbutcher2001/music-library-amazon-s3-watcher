@@ -82,7 +82,7 @@ s3MusicService.identifyTrackChanges = function(trackKeys, index) {
 };
 
 //TODO: this doesn't have to be a promise
-s3MusicService.extractTrackMeta = function(trackKeys, index) {
+s3MusicService.updateDatabaseModel = function(trackKeys, index) {
     return new Promise(function(resolve, reject) {
         var trackKey = trackKeys[index++];
         var trackParams = {
@@ -125,7 +125,15 @@ s3MusicService.extractTrackMeta = function(trackKeys, index) {
 
                   //forces synchronous processing of files to prevent mem issues
                   if (index < trackKeys.length) {
-                      s3MusicService.extractTrackMeta(trackKeys, index);
+                      //s3MusicService.updateDatabaseModel(trackKeys, index);
+                      s3MusicService.updateDatabaseModel(trackKeys, index).then(function() {
+                          resolve();
+                      }).catch(function(error) {
+                          console.error(error, error.stack);
+                      });
+                  }
+                  else {
+                      resolve();
                   }
               }).
               send();
@@ -133,7 +141,14 @@ s3MusicService.extractTrackMeta = function(trackKeys, index) {
         else {
             //forces synchronous processing of files to prevent mem issues
             if (index < trackKeys.length) {
-                s3MusicService.extractTrackMeta(trackKeys, index);
+                s3MusicService.updateDatabaseModel(trackKeys, index).then(function() {
+                    resolve();
+                }).catch(function(error) {
+                    console.error(error, error.stack);
+                });
+            }
+            else {
+                resolve();
             }
         }
     });

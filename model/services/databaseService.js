@@ -16,6 +16,9 @@ mongoose.Promise = Promise;
 
 databaseService.checkOrAddArtist = function(artist) {
     return new Promise(function(resolve, reject) {
+        if (artist == null) {
+            artist = '<Unknown Artist>';
+        }
         Artist.find({ name: artist }, function(err, results) {
             var artistId = null;
 
@@ -50,6 +53,9 @@ databaseService.checkOrAddArtist = function(artist) {
 
 databaseService.checkOrAddAlbum = function(artistId, album) {
     return new Promise(function(resolve, reject) {
+        if (album == null) {
+            album = '<Unknown Album>';
+        }
         Album.find({ name: album }, function(err, results) {
             var albumId = null;
 
@@ -83,6 +89,16 @@ databaseService.checkOrAddAlbum = function(artistId, album) {
     });
 };
 
+//TODO: make this a Promise so that when called in the s3MusicService, we can move the
+// recursive 'if (index < trackKeys.length)' block up to when this returns.
+// Should prevent the following output happening:
+// New artist [Viceroy] added to DB with new ID [58da7712ba72fe4d6413977a]
+// New album [Vita Tapes] added to DB with new ID [58da7712ba72fe4d6413977b]
+// New track added to DB [Viceroy & Vitacoco's Vita Tapes Vol. 2:58da7712ba72fe4d6413977c]
+// Processing complete {this completes before last 3 lines run}
+// New artist [Jamie Woon] added to DB with new ID [58da7722ba72fe4d6413977d]
+// New album [www.soundcloud.com/groovedoctormusic] added to DB with new ID [58da7722ba72fe4d6413977e]
+// New track added to DB [Lady Luck (The Groovedoctor edit) remaster:58da7722ba72fe4d6413977f]
 databaseService.addTrack = function(albumId, artistId, extension, s3key, title, year) {
     if (albumId != null && artistId != null) {
         var encoding = 'audio';
