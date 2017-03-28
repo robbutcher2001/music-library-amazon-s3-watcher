@@ -2,7 +2,7 @@
   "name": "music-library-filesystem-watcher",
   "version": "0.0.1",
   "description": "",
-  "main": "watcher.js",
+  "main": "s3-watcher.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node s3-watcher.js"

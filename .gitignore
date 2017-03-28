@@ -3,4 +3,5 @@ node_modules
 app/lib
 app/dist
 media/*
+npm-debug.log
 nohup.out

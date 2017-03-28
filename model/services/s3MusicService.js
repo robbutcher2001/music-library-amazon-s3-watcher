@@ -10,8 +10,16 @@ var AWS = require('aws-sdk');
 // http://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials.html
 AWS.config.loadFromPath('./s3_config.json');
 
+//just for local
+// var proxy = require('proxy-agent');
+//
+// AWS.config.update({
+//   httpOptions: { agent: proxy('http://172.26.193.2:8080/') }
+// });
+//end just for local
+
 // Create S3 service object
-s3 = new AWS.S3();
+var s3 = new AWS.S3();
 
 var s3MusicService = {};
 var bucketUrl = 'robertbutcher.co.uk-music-library';
@@ -73,6 +81,7 @@ s3MusicService.identifyTrackChanges = function(trackKeys, index) {
     });
 };
 
+//TODO: this doesn't have to be a promise
 s3MusicService.extractTrackMeta = function(trackKeys, index) {
     return new Promise(function(resolve, reject) {
         var trackKey = trackKeys[index++];
