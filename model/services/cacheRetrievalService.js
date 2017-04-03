@@ -8,21 +8,39 @@ mongoose.connect('mongodb://database-service-container/music-track-cache-db');
 grid.mongo = mongoose.mongo;
 var conn = mongoose.connection;
 
-var gfs = grid(conn.db);
+conn.once('open', function () {
+    console.log('open');
 
-// streaming to gridfs
-//filename to store in mongodb
-var writestream = gfs.createWriteStream({
-    filename: 'somethingAgain.mp3'
+    var gfs = grid(conn.db);
+
+    // streaming to gridfs
+    // filename to store in mongodb
+    var writestream = gfs.createWriteStream({
+        filename: 'large.mp3'
+    });
+    fs.createReadStream('./media/large.mp3').pipe(writestream);
+
+    writestream.on('close', function (file) {
+        // do something with `file`
+        console.log(file.filename + 'Written To DB');
+    });
 });
-fs.createReadStream('./media/something.mp3').pipe(writestream);
 
-writestream.on('close', function (file) {
-    // do something with `file`
-    console.log(file.filename + 'Written To DB');
-});
+// conn.once('open', function () {
+//     //write content to file system
+//     var writestream = fs.createWriteStream('./media/itsback.mp3');
+//
+//     //read from mongodb
+//     var readstream = gfs.createReadStream({
+//         filename: 'large.mp3'
+//     });
+//     readstream.pipe(writestream);
+//     writestream.on('close', function () {
+//         console.log('file has been written fully!');
+//     });
+// });
 
-var track = fs.readFileSync('./media/something.mp3');
+//var track = fs.readFileSync('./media/58e286bc1a55674eb2c45c41.mp3');
 
 // var newCache = new TrackCache({
 //     trackId: 'something.mp3',
