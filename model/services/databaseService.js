@@ -100,48 +100,55 @@ databaseService.checkOrAddAlbum = function(artistId, album) {
 // New album [www.soundcloud.com/groovedoctormusic] added to DB with new ID [58da7722ba72fe4d6413977e]
 // New track added to DB [Lady Luck (The Groovedoctor edit) remaster:58da7722ba72fe4d6413977f]
 databaseService.addTrack = function(albumId, artistId, extension, s3key, title, year) {
-    if (albumId != null && artistId != null) {
-        var encoding = 'audio';
-        if (extension == 'mp3') {
-            encoding = 'audio/mpeg';
+    return new Promise(function(resolve, reject) {
+        if (albumId != null && artistId != null) {
+            var encoding = 'audio';
+            if (extension == 'mp3') {
+                encoding = 'audio/mpeg';
+            }
+            else if (extension == 'm4a') {
+                encoding = 'audio/mp4';
+            }
+
+            Track.find({ title: title }).where('albumId').eq(albumId).exec(function(err, track) {
+                if (track.length > 1) {
+                    console.error('Multiple tracks returned of the same name for same album');
+                    reject();
+                }
+
+                if (track[0] == null) {
+                    var newTrack = new Track({
+                        albumId: albumId,
+                        artistId: artistId,
+                        title: title,
+                        extension: extension,
+                        year: year,
+                        s3key: s3key,
+                        encoding: encoding
+                    });
+
+                    newTrack.save(function (err, trackCallback) {
+                        if (err == null) {
+                            console.log('New track added to DB [' + title + ':' + trackCallback.id + ']');
+                            resolve(trackCallback.id);
+                        }
+                        else {
+                            console.error('Could not persist [' + title + '] to DB');
+                            reject();
+                        }
+                    });
+                }
+                else {
+                    console.log('Track [' + track[0].toObject()._id + '] already exists, ignoring');
+                    resolve(track[0].toObject()._id);
+                }
+            });
         }
-        else if (extension == 'm4a') {
-            encoding = 'audio/mp4';
+        else {
+            console.error('An artistId or albumId is not present, cannot save track [' + s3key + ']');
+            reject();
         }
-
-        Track.find({ title: title }).where('albumId').eq(albumId).exec(function(err, track) {
-            if (track.length > 1) {
-                console.error('Multiple tracks returned of the same name for same album');
-            }
-
-            if (track[0] == null) {
-                var newTrack = new Track({
-                    albumId: albumId,
-                    artistId: artistId,
-                    title: title,
-                    extension: extension,
-                    year: year,
-                    s3key: s3key,
-                    encoding: encoding
-                });
-
-                newTrack.save(function (err, trackCallback) {
-                    if (err == null) {
-                        console.log('New track added to DB [' + title + ':' + trackCallback.id + ']');
-                    }
-                    else {
-                        console.error('Could not persist [' + title + '] to DB');
-                    }
-                });
-            }
-            else {
-                console.log('Track [' + track[0].toObject()._id + '] already exists, ignoring');
-            }
-        });
-    }
-    else {
-        console.error('An artistId or albumId is not present, cannot save track [' + s3key + ']');
-    }
+    });
 };
 
 databaseService.checkTrackExists = function(s3key) {

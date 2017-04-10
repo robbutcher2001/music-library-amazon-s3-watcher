@@ -1,6 +1,7 @@
 var fs = require('fs');
 var tagReadingService = require('./tagReadingService');
 var databaseService = require('./databaseService');
+var cacheManagementService = require('./cacheManagementService');
 // Load the S3 SDK for JavaScript
 // TODO: add only call to S3
 // var AWS = require('aws-sdk/clients/s3');
@@ -44,7 +45,7 @@ s3MusicService.getTracksInS3 = function() {
                     });
                 }
                 else {
-                  resolve(allKeys);
+                    resolve(allKeys);
                 }
             }
         });
@@ -104,18 +105,26 @@ s3MusicService.updateDatabaseModel = function(trackKeys, index) {
                       var title  = tags[2];
                       var year  = tags[3];
 
-                      fs.unlink(cacheTemp.path, (error) => {
-                          if (error) throw error;
-                      });
-
                       databaseService.checkOrAddArtist(artist).then(function(artistId) {
                           databaseService.checkOrAddAlbum(artistId, album).then(function(albumId) {
-                              databaseService.addTrack(albumId, artistId, extension, trackKey, title, year);
+                              databaseService.addTrack(albumId, artistId, extension, trackKey, title, year).then(function(trackId) {
+                                  cacheManagementService.checkCache(trackId).then(function(retrievedTrack) {
+                                      console.log('Track cached? ' + retrievedTrack)
+                                  }).catch(function(error) {
+                                      console.error(error);
+                                  });
+                              }).catch(function(error) {
+                                  console.error(error);
+                              });
                           }).catch(function(error) {
                               console.error(error);
                           });
                       }).catch(function(error) {
                           console.error(error);
+                      });
+
+                      fs.unlink(cacheTemp.path, (error) => {
+                          if (error) throw error;
                       });
                   });
 

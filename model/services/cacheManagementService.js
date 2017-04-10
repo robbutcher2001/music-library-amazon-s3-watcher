@@ -23,6 +23,23 @@ cacheManagementService.putCache = function(filePath, trackId) {
     });
 };
 
+cacheManagementService.checkCache = function(trackId) {
+    return new Promise(function(resolve, reject) {
+        mongodb.MongoClient.connect(dburi, function(error, db) {
+            var collection = db.collection('fs.files');
+
+            collection.find({'filename': trackId}).count(function(err, count) {
+                if (count > 0) {
+                    resolve(true);
+                }
+                else {
+                    resolve(false);
+                }
+            });
+        });
+    });
+};
+
 cacheManagementService.getCache = function(trackId) {
     return new Promise(function(resolve, reject) {
         mongodb.MongoClient.connect(dburi, function(error, db) {
@@ -34,7 +51,7 @@ cacheManagementService.getCache = function(trackId) {
                 on('error', function(error) {
                     reject(error);
                 }).
-                on('finish', function(file) {
+                on('finish', function() {
                     resolve(retrievedName);
                 });
         });
