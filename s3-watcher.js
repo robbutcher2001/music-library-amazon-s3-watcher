@@ -1,4 +1,3 @@
-var watch = require('node-watch');
 var s3MusicService = require('./model/services/s3MusicService');
 var processing = false;
 
