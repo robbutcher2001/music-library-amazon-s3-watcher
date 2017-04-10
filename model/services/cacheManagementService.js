@@ -17,7 +17,7 @@ cacheManagementService.putCache = function(filePath, trackId) {
                     reject(error);
                 }).
                 on('finish', function() {
-                    resolve();
+                    resolve(true);
                 });
         });
     });

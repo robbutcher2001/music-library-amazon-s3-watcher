@@ -89,6 +89,7 @@ databaseService.checkOrAddAlbum = function(artistId, album) {
     });
 };
 
+//fixed now?
 //TODO: make this a Promise so that when called in the s3MusicService, we can move the
 // recursive 'if (index < trackKeys.length)' block up to when this returns.
 // Should prevent the following output happening:

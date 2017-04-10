@@ -10,9 +10,9 @@ setInterval(function () {
             s3MusicService.identifyTrackChanges(trackKeys, 0).then(function(newTracks) {
                 if (newTracks.length > 0) {
                     console.log('Total of [' + newTracks.length + '] new tracks found, processing..');
-                    s3MusicService.updateDatabaseModel(newTracks, 0).then(function() {
+                    s3MusicService.updateDatabaseModel(newTracks, 0, function() {
                         processing = false;
-                        console.log('Processing complete');
+                        console.log('Processing complete, sleeping..\n');
                     }).catch(function(error) {
                         console.error(error, error.stack);
                     });

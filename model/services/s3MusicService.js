@@ -78,41 +78,54 @@ s3MusicService.identifyTrackChanges = function(trackKeys, index) {
     });
 };
 
-//TODO: this doesn't have to be a promise
-s3MusicService.updateDatabaseModel = function(trackKeys, index) {
-    return new Promise(function(resolve, reject) {
-        var trackKey = trackKeys[index++];
-        var trackParams = {
-            Bucket: bucketUrl,
-            Key: trackKey
-        };
+s3MusicService.updateDatabaseModel = function(trackKeys, index, callback) {
+    var trackKey = trackKeys[index++];
+    var trackParams = {
+        Bucket: bucketUrl,
+        Key: trackKey
+    };
 
-        var tokenisedKey = trackKey.split(/\//);
-        var trackName = tokenisedKey[(tokenisedKey.length - 1)];
-        var tokenisedTrackName = trackName.split(/\./);
-        var extension = tokenisedTrackName[(tokenisedTrackName.length - 1)];
+    var tokenisedKey = trackKey.split(/\//);
+    var trackName = tokenisedKey[(tokenisedKey.length - 1)];
+    var tokenisedTrackName = trackName.split(/\./);
+    var extension = tokenisedTrackName[(tokenisedTrackName.length - 1)];
 
-        if (checkValidExtension(extension)) {
-            var cacheTemp = fs.createWriteStream('./media/' + trackName);
-            //TODO: add error handling
-            s3.getObject(trackParams).
-              on('httpData', function(chunk) { cacheTemp.write(chunk); }).
-              on('httpDone', function() {
-                  cacheTemp.end();
-                  tagReadingService.getTags(cacheTemp.path, ['artist', 'album', 'title', 'year']).then(function(tags) {
-                      var artist = tags[0];
-                      var album  = tags[1];
-                      var title  = tags[2];
-                      var year  = tags[3];
+    if (checkValidExtension(extension)) {
+        var cacheTemp = fs.createWriteStream('./media/' + trackName);
+        //TODO: add error handling
+        s3.getObject(trackParams).
+          on('httpData', function(chunk) { cacheTemp.write(chunk); }).
+          on('httpDone', function() {
+              cacheTemp.end();
+              tagReadingService.getTags(cacheTemp.path, ['artist', 'album', 'title', 'year']).then(function(tags) {
+                  var artist = tags[0];
+                  var album = tags[1];
+                  var title = tags[2];
+                  var year = tags[3];
 
-                      databaseService.checkOrAddArtist(artist).then(function(artistId) {
-                          databaseService.checkOrAddAlbum(artistId, album).then(function(albumId) {
-                              databaseService.addTrack(albumId, artistId, extension, trackKey, title, year).then(function(trackId) {
-                                  cacheManagementService.checkCache(trackId).then(function(retrievedTrack) {
-                                      console.log('Track cached? ' + retrievedTrack)
-                                  }).catch(function(error) {
-                                      console.error(error);
-                                  });
+                  databaseService.checkOrAddArtist(artist).then(function(artistId) {
+                      databaseService.checkOrAddAlbum(artistId, album).then(function(albumId) {
+                          databaseService.addTrack(albumId, artistId, extension, trackKey, title, year).then(function(trackId) {
+                              cacheManagementService.checkCache(trackId).then(function(retrievedTrack) {
+                                  if (retrievedTrack == false) {
+                                      cacheManagementService.putCache(cacheTemp.path, trackId).then(function(cached) {
+                                          if (cached == true) {
+                                              console.log('Track [' + trackId + '] cached in DB');
+                                          }
+
+                                          fs.unlink(cacheTemp.path, (error) => {
+                                              if (error) throw error;
+                                          });
+
+                                          //do not callback here as we need
+                                          //to wait until recursion is complete
+                                      }).catch(function(error) {
+                                          console.error(error);
+                                      });
+                                  }
+                                  else {
+                                      console.log('Track [' + trackId + '] found in cache DB, ignoring');
+                                  }
                               }).catch(function(error) {
                                   console.error(error);
                               });
@@ -122,41 +135,34 @@ s3MusicService.updateDatabaseModel = function(trackKeys, index) {
                       }).catch(function(error) {
                           console.error(error);
                       });
-
-                      fs.unlink(cacheTemp.path, (error) => {
-                          if (error) throw error;
-                      });
+                  }).catch(function(error) {
+                      console.error(error);
                   });
+              });
 
-                  //forces synchronous processing of files to prevent mem issues
-                  if (index < trackKeys.length) {
-                      //s3MusicService.updateDatabaseModel(trackKeys, index);
-                      s3MusicService.updateDatabaseModel(trackKeys, index).then(function() {
-                          resolve();
-                      }).catch(function(error) {
-                          console.error(error, error.stack);
-                      });
-                  }
-                  else {
-                      resolve();
-                  }
-              }).
-              send();
+              //forces synchronous processing of files to prevent mem issues
+              if (index < trackKeys.length) {
+                  s3MusicService.updateDatabaseModel(trackKeys, index, function() {
+                      callback();
+                  });
+              }
+              else {
+                  callback();
+              }
+          }).
+          send();
+    }
+    else {
+        //forces synchronous processing of files to prevent mem issues
+        if (index < trackKeys.length) {
+            s3MusicService.updateDatabaseModel(trackKeys, index, function() {
+                callback();
+            });
         }
         else {
-            //forces synchronous processing of files to prevent mem issues
-            if (index < trackKeys.length) {
-                s3MusicService.updateDatabaseModel(trackKeys, index).then(function() {
-                    resolve();
-                }).catch(function(error) {
-                    console.error(error, error.stack);
-                });
-            }
-            else {
-                resolve();
-            }
+            callback();
         }
-    });
+    }
 };
 
 function checkValidExtension(extension) {
