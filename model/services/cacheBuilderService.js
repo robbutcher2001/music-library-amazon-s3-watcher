@@ -4,26 +4,9 @@ var mongodb = require('mongodb');
 
 const dburi = 'mongodb://database-service-container/music-track-cache-db';
 
-var cacheManagementService = {};
+var cacheBuilderService = {};
 
-cacheManagementService.putCache = function(filePath, trackId) {
-    return new Promise(function(resolve, reject) {
-        mongodb.MongoClient.connect(dburi, function(error, db) {
-            var bucket = new mongodb.GridFSBucket(db);
-
-            fs.createReadStream(filePath).
-                pipe(bucket.openUploadStream(trackId)).
-                on('error', function(error) {
-                    reject(error);
-                }).
-                on('finish', function() {
-                    resolve(true);
-                });
-        });
-    });
-};
-
-cacheManagementService.checkCache = function(trackId) {
+cacheBuilderService.checkCache = function(trackId) {
     return new Promise(function(resolve, reject) {
         mongodb.MongoClient.connect(dburi, function(error, db) {
             var collection = db.collection('fs.files');
@@ -40,22 +23,21 @@ cacheManagementService.checkCache = function(trackId) {
     });
 };
 
-cacheManagementService.getCache = function(trackId) {
+cacheBuilderService.putCache = function(filePath, trackId) {
     return new Promise(function(resolve, reject) {
         mongodb.MongoClient.connect(dburi, function(error, db) {
             var bucket = new mongodb.GridFSBucket(db);
-            const retrievedName = './media/' + trackId;
 
-            bucket.openDownloadStreamByName(trackId).
-                pipe(fs.createWriteStream(retrievedName)).
+            fs.createReadStream(filePath).
+                pipe(bucket.openUploadStream(trackId)).
                 on('error', function(error) {
                     reject(error);
                 }).
                 on('finish', function() {
-                    resolve(retrievedName);
+                    resolve(true);
                 });
         });
     });
 };
 
-module.exports = cacheManagementService;
+module.exports = cacheBuilderService;

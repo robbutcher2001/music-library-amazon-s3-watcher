@@ -1,7 +1,7 @@
 var fs = require('fs');
 var tagReadingService = require('./tagReadingService');
 var databaseService = require('./databaseService');
-var cacheManagementService = require('./cacheManagementService');
+var cacheBuilderService = require('./cacheBuilderService');
 // Load the S3 SDK for JavaScript
 // TODO: add only call to S3
 // var AWS = require('aws-sdk/clients/s3');
@@ -106,9 +106,9 @@ s3MusicService.updateDatabaseModel = function(trackKeys, index, callback) {
                   databaseService.checkOrAddArtist(artist).then(function(artistId) {
                       databaseService.checkOrAddAlbum(artistId, album).then(function(albumId) {
                           databaseService.addTrack(albumId, artistId, extension, trackKey, title, year).then(function(trackId) {
-                              cacheManagementService.checkCache(trackId).then(function(retrievedTrack) {
+                              cacheBuilderService.checkCache(trackId).then(function(retrievedTrack) {
                                   if (retrievedTrack == false) {
-                                      cacheManagementService.putCache(cacheTemp.path, trackId).then(function(cached) {
+                                      cacheBuilderService.putCache(cacheTemp.path, trackId).then(function(cached) {
                                           if (cached == true) {
                                               console.log('Track [' + trackId + '] cached in DB');
                                           }
